@@ -55,6 +55,7 @@ export function setBuffer(
     buffer: WebGLBuffer,
     location: number,
     numComponents: number,
+    instancing = false,
     type: number = gl.FLOAT,
     target: number = gl.ARRAY_BUFFER,
     normalize = false,
@@ -71,6 +72,9 @@ export function setBuffer(
         stride,
         offset);
     gl.enableVertexAttribArray(location);
+    if (instancing) {
+        //TODO: implement vertexAttribDivisorANGLE
+    };
 }
 
 export function loadTexture(

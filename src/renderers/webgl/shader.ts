@@ -3,6 +3,8 @@ import { WebGL2RenderingContext, WebGLProgram, WebGLUniformLocation } from "../.
 export const vertex2d = `
 attribute vec2 aVertexPosition;
 attribute vec2 aTextureCoord;
+attribute vec2 aInstancePosition;
+attribute vec4 aInstanceColor;
 
 uniform float uShaderUsage;
 uniform vec4 uVertexColor;
@@ -13,11 +15,15 @@ varying lowp vec4 vColor;
 varying highp vec2 vTextureCoord;
 
 void main(void) {
-  gl_Position = vec4(aVertexPosition + uTransformMatrix, 1, 1);
   if (uShaderUsage == 0.0) {
     vColor = uVertexColor;
-  } else {
+    gl_Position = vec4(aVertexPosition + uTransformMatrix, 1, 1);
+  } else if (uShaderUsage == 1.0) {
     vTextureCoord = aTextureCoord;
+    gl_Position = vec4(aVertexPosition + uTransformMatrix, 1, 1);
+  } else if (uShaderUsage == 2.0) {
+    vColor = aInstanceColor;
+    gl_Position = vec4(aVertexPosition + uTransformMatrix + aInstancePosition, 1, 1);
   }
   vShaderUsage = uShaderUsage;
 }
@@ -64,6 +70,8 @@ void main(void) {
 export interface ProgramInfo2d {
   position: number;
   texture: number;
+  position2: number;
+  color2: number;
 
   color: WebGLUniformLocation;
   transform: WebGLUniformLocation;
@@ -75,6 +83,8 @@ export function programInfo2d(gl: WebGL2RenderingContext, program: WebGLProgram)
   return {
     position: gl.getAttribLocation(program, 'aVertexPosition'),
     texture: gl.getAttribLocation(program, 'aTextureCoord'),
+    position2: gl.getAttribLocation(program, 'aInstancePosition'),
+    color2: gl.getAttribLocation(program, 'aInstanceColor'),
 
     color: gl.getUniformLocation(program, 'uVertexColor')!,
     transform: gl.getUniformLocation(program, 'uTransformMatrix')!,

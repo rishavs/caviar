@@ -1,6 +1,6 @@
 import { WebGLBuffer, WebGLTexture } from "../../../deno_gl/mod.ts";
 
-export type EntityBuffers = RectangleBuffers | ImageBuffers
+export type EntityBuffers = RectangleBuffers | ImageBuffers | TextureSpriteBuffers
 
 export type RectangleBuffers = {
     position: WebGLBuffer,
@@ -8,6 +8,12 @@ export type RectangleBuffers = {
 
 export type ImageBuffers = {
     position: WebGLBuffer,
-    texture: WebGLTexture,
-    coords: WebGLBuffer,
+    sampler: WebGLTexture,
+    texture: WebGLBuffer,
+}
+
+export type TextureSpriteBuffers = {
+    position: WebGLBuffer,
+    position2: WebGLBuffer,
+    color2: WebGLBuffer,
 }

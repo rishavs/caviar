@@ -14,7 +14,7 @@ import {
   Image
 } from "../../../mod.ts";
 import { createBuffer, initShaderProgram, setBuffer, loadTexture } from "./util.ts";
-import { EntityBuffers, RectangleBuffers, ImageBuffers } from "./types.ts";
+import { EntityBuffers, RectangleBuffers, ImageBuffers, TextureSpriteBuffers } from "./types.ts";
 
 export class WebGLRenderer2D {
   private program: WebGLProgram;
@@ -42,9 +42,7 @@ export class WebGLRenderer2D {
     if (entity instanceof Rectangle) {
       this.setupRectangle(entity);
     } else if (entity instanceof TextureSprite) {
-      for (const rect of entity.data) {
-        this.setupRectangle(rect);
-      }
+      this.setupTextureSprite(entity)
     } else if (entity instanceof Group) {
       for (const child of entity.children) {
         this._start(child);
@@ -68,9 +66,7 @@ export class WebGLRenderer2D {
     if (entity instanceof Rectangle) {
       this.renderRectangle(entity);
     } else if (entity instanceof TextureSprite) {
-      for (const rect of entity.data) {
-        this.renderRectangle(rect);
-      }
+      this.renderTextureSprite(entity)
     } else if (entity instanceof Group) {
       for (const child of entity.children) {
         this._render(child);
@@ -120,29 +116,59 @@ export class WebGLRenderer2D {
       data[i + 1] = data[i + 1] / this.canvas.height * -2 + 1;
     }
     const position = createBuffer(this.gl, data);
-    const texture = loadTexture(this.gl, entity.image)!
-    const coords = createBuffer(this.gl, [
+    const sampler = loadTexture(this.gl, entity.image)!
+    const texture = createBuffer(this.gl, [
       0.0, 0.0,
       1.0, 0.0,
       0.0, 1.0,
       1.0, 1.0,
     ]);
-    this.buffers.set(entity.id, { position, texture, coords });
+    this.buffers.set(entity.id, { position, sampler, texture });
   }
 
   private renderImage(entity: Image): void {
     const buffers = this.buffers.get(entity.id) as ImageBuffers
     setBuffer(this.gl, buffers.position, this.location.position, 2);
-    setBuffer(this.gl, buffers.coords, this.location.texture, 2);
+    setBuffer(this.gl, buffers.texture, this.location.texture, 2);
 
     const x = entity.x / this.canvas.width * 2
     const y = entity.y / this.canvas.height * -2
 
     this.gl.activeTexture(this.gl.TEXTURE0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, buffers.texture);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, buffers.sampler);
     this.gl.uniform1i(this.location.sampler, 0);
     this.gl.uniform2fv(this.location.transform, new Float32Array([x, y]));
     this.gl.uniform1f(this.location.usage, 1);
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  private setupTextureSprite(entity: TextureSprite): void {
+    const data = [
+      0, 0,                    // top left corner
+      entity.pixelWidth, 0,           // top right corner
+      0, entity.pixelHeight,          // bottom left corner
+      entity.pixelWidth, entity.pixelHeight, // bottom right corner
+    ];
+    for (let i = 0; i < data.length; i += 2) {
+      data[i] = data[i] / this.canvas.width * 2 - 1;
+      data[i + 1] = data[i + 1] / this.canvas.height * -2 + 1;
+    }
+    const position = createBuffer(this.gl, data);
+    const position2 = createBuffer(this.gl, data);
+    const color2 = createBuffer(this.gl, data);
+    this.buffers.set(entity.id, { position, position2, color2 });
+  }
+
+  private renderTextureSprite(entity: TextureSprite): void {
+    const buffers = this.buffers.get(entity.id) as TextureSpriteBuffers;
+    setBuffer(this.gl, buffers.position, this.location.position, 2);
+    setBuffer(this.gl, buffers.position2, this.location.position2, 2);
+    setBuffer(this.gl, buffers.color2, this.location.color2, 2);
+
+    const x = entity.x / this.canvas.width * 2
+    const y = entity.y / this.canvas.height * -2
+
+    this.gl.uniform2fv(this.location.transform, new Float32Array([x, y]));
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
   }
 
